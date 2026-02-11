@@ -87,3 +87,7 @@ git pull
 docker compose build bot cleanup
 docker compose up -d
 ```
+```
+docker compose ps
+docker compose logs -f bot
+```
