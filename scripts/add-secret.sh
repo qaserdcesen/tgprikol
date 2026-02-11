@@ -3,10 +3,10 @@ SECRET=$1
 USERNAME=$2
 DOMAIN=${3:-"1c.ru"}
 CONFIG_FILE="/app/data/telemt.toml"
-COMPOSE_FILE="/app/docker-compose.yml"
+TELEMT_CONTAINER=${TELEMT_CONTAINER:-telemt}
 
 sed -i "/\[access.users\]/a $USERNAME = \"$SECRET\"" "$CONFIG_FILE"
-docker compose -f "$COMPOSE_FILE" restart telemt
+docker restart "$TELEMT_CONTAINER" >/dev/null
 
 IP=$(curl -s -4 ifconfig.me)
 HEX_DOMAIN=$(echo -n "$DOMAIN" | od -A n -t x1 -w256 | sed 's/ //g')

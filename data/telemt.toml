@@ -26,7 +26,7 @@ replay_check_len = 65536
 ignore_time_skew = false
 
 [access.users]
-admin = "a4be94b5f0e7b4e0d274b42bbdf3b9eb"
+admin = "{{ADMIN_SECRET}}"
 
 [[upstreams]]
 type = "direct"

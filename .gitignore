@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Environment / secrets
+.env
+.env.*
+
+# Local data and runtime state
+data/users.db
+data/telemt.toml
+data/*.db
+
+# Editor / OS cruft
+.DS_Store
+Thumbs.db
