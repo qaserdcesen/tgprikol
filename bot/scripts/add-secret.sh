@@ -5,6 +5,8 @@ DOMAIN=${3:-"1c.ru"}
 CONFIG_FILE="/app/data/telemt.toml"
 TELEMT_CONTAINER=${TELEMT_CONTAINER:-telemt}
 
+# Удаляем существующую запись, если пользователь уже есть, чтобы не было дубликатов
+sed -i "/^$USERNAME = /d" "$CONFIG_FILE"
 sed -i "/\[access.users\]/a $USERNAME = \"$SECRET\"" "$CONFIG_FILE"
 docker restart "$TELEMT_CONTAINER" >/dev/null
 

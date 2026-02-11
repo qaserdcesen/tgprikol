@@ -143,12 +143,14 @@ async def successful_payment(update: Update, context: ContextTypes.DEFAULT_TYPE)
     expires = (datetime.date.today() + datetime.timedelta(days=days)).isoformat()
     database.add_user(chat_id, secret, expires, link)
 
-    keyboard = [[InlineKeyboardButton("📋 Статус", callback_data="status")]]
+    keyboard = [
+        [InlineKeyboardButton("������", callback_data="status")],
+        [InlineKeyboardButton("������� ������", url=link)],
+    ]
     await update.message.reply_text(
         (
             "✔ Оплата прошла!\n"
-            f"⌛ Действует до: {expires}\n"
-            f"🔗 <code>{link}</code>"
+            f"⌛ Действует до: {expires}"
         ),
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
@@ -163,12 +165,11 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user:
         _, _, expires, link, _ = user
         days_left = (datetime.date.fromisoformat(expires) - datetime.date.today()).days
+        keyboard = [[InlineKeyboardButton("������� ������", url=link)]]
         await query.message.reply_text(
-            (
-                f"⌛ Истекает: {expires} (осталось {days_left} дн.)\n"
-                f"🔗 <code>{link}</code>"
-            ),
+            f"? ��������: {expires} (�������� {days_left} ��.)",
             parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(keyboard),
         )
     else:
         await query.message.reply_text("❌ У вас нет активной подписки.")
@@ -209,12 +210,11 @@ async def prolong_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ).isoformat()
     database.update_expires(chat_id, new_expires)
 
+    keyboard = [[InlineKeyboardButton("������� ������", url=user[3])]]
     await update.message.reply_text(
-        (
-            f"✔ Подписка продлена до {new_expires}\n"
-            f"🔗 Ссылка осталась прежней: <code>{user[3]}</code>"
-        ),
+        f"✔ Подписка продлена до {new_expires}",
         parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(keyboard),
     )
 
 
@@ -338,9 +338,11 @@ async def admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         expires = (datetime.date.today() + datetime.timedelta(days=days)).isoformat()
         database.add_user(target_id, secret, expires, link)
+        keyboard = [[InlineKeyboardButton("������� ������", url=link)]]
         await update.message.reply_text(
-            f"✅ Создано для {target_id}\nИстекает: {expires}\n🔗 <code>{link}</code>",
+            f"✅ Создано для {target_id}\nИстекает: {expires}",
             parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(keyboard),
         )
 
     elif op == "delete":
