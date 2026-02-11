@@ -21,6 +21,14 @@ git clone https://github.com/yourorg/tgprikol.git
 cd tgprikol
 ```
 
+Установка Docker + Compose (Ubuntu/Debian):
+```bash
+sudo apt update
+sudo apt install -y docker.io docker-compose-plugin
+sudo systemctl enable --now docker
+sudo usermod -aG docker "$USER"   # перелогиньтесь после этой команды
+```
+
 Подготовка (один раз):
 ```bash
 cp .env.example .env                 # заполните токены и цены
