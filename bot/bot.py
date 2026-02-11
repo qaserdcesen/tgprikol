@@ -72,7 +72,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def buy(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    chat_id = query.message.chat_id
+    chat_id = query.message.chat.id
 
     await context.bot.send_invoice(
         chat_id,
@@ -130,7 +130,7 @@ async def successful_payment(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    chat_id = query.message.chat_id
+    chat_id = query.message.chat.id
     user = database.get_user(chat_id)
 
     if user:
@@ -149,7 +149,7 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def prolong(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    chat_id = query.message.chat_id
+    chat_id = query.message.chat.id
 
     if not database.get_user(chat_id):
         await query.message.reply_text("❌ Сначала купите подписку через 🛒")

@@ -1,17 +1,6 @@
 # tgprikol
 
-Телеграм-бот для продажи MTProto прокси + контейнер с telemt.
-
-## Быстрый старт
-1) Скопируйте пример переменных окружения и заполните секреты:
-   ```
-   cp .env.example .env
-   ```
-2) Не храните боевые `data/users.db` и `data/telemt.toml` в Git — они игнорируются в `.gitignore`. Создайте их заново перед запуском или примонтируйте снаружи.
-3) Запустите:
-   ```
-   docker compose up -d
-   ```
+Телеграм‑бот для продажи MTProto прокси + контейнер с telemt.
 
 ## Деплой (docker compose)
 
@@ -23,17 +12,19 @@ cd tgprikol
 
 Установка Docker + Compose (Ubuntu/Debian):
 ```bash
-sudo apt update
-sudo apt install -y docker.io docker-compose-plugin
-sudo systemctl enable --now docker
-sudo usermod -aG docker "$USER"   # перелогиньтесь после этой команды
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+exec su -l $USER        # перелогин (или выйти/зайти)  # перелогиньтесь после этой команды
 ```
 
 Подготовка (один раз):
 ```bash
-cp .env.example .env                 # заполните токены и цены
-sed -i 's/{{ADMIN_SECRET}}/your_secret_here/' data/telemt.toml
-rm -f data/users.db                  # при первом старте sqlite создаст файл сам
+mkdir -p data
+cp env.example .env                 # заполните токены и цены
+nano .env                            # обязательно: BOT_TOKEN, PROVIDER_TOKEN, ADMIN_IDS
+ADMIN_SECRET=$(openssl rand -hex 16)
+sed "s/{{ADMIN_SECRET}}/$ADMIN_SECRET/" telemt/telemt.toml > data/telemt.toml
+touch data/users.db                  # пустой файл, чтобы корректно примонтировать
 ```
 
 Сборка и запуск:
@@ -47,7 +38,7 @@ docker compose up -d
 docker compose ps
 ```
 
-Просмотр логов бота:
+Логи бота:
 ```bash
 docker compose logs -f bot
 ```
@@ -58,6 +49,23 @@ docker compose pull || docker compose build
 docker compose up -d
 ```
 
+Если видите `sqlite3.OperationalError: unable to open database file`, убедитесь, что каталог `data` существует, файл `data/users.db` создан на хосте (команда `touch data/users.db`), а в compose для бота и cleanup монтируется директория `./data:/app/data`.
+
+Открыть порт 443 (если включён UFW):
+```bash
+sudo ufw allow 443/tcp
+```
+
+Сгенерировать ссылку на прокси для admin (использует ADMIN_SECRET из `data/telemt.toml`):
+```bash
+ADMIN_SECRET=$(grep '^admin' data/telemt.toml | sed 's/.*\"//;s/\".*//')
+IP=$(curl -s -4 ifconfig.me)
+DOMAIN=$(grep DEFAULT_DOMAIN .env | cut -d= -f2 | tr -d '"' || echo "1c.ru")
+HEX_DOMAIN=$(echo -n "$DOMAIN" | od -A n -t x1 -w256 | sed 's/ //g')
+HEX_LEN=$(printf "%02x" ${#DOMAIN})
+echo "tg://proxy?server=$IP&port=443&secret=ee${ADMIN_SECRET}${HEX_LEN}${HEX_DOMAIN}"
+```
+
 ## Безопасность
-- Не коммитьте токены и файл `data/telemt.toml` с секренами.
+- Не коммитьте токены и файл `data/telemt.toml` с секретами.
 - У бота есть доступ к docker.sock — оставляйте его только если нужно управлять контейнером, иначе уберите монтирование.

@@ -24,8 +24,7 @@ services:
     container_name: telemt-bot
     restart: unless-stopped
     volumes:
-      - ./data/telemt.toml:/app/data/telemt.toml:rw
-      - ./data/users.db:/app/data/users.db:rw
+      - ./data:/app/data:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro
     env_file:
       - .env
@@ -39,8 +38,7 @@ services:
     container_name: telemt-cleanup
     restart: unless-stopped
     volumes:
-      - ./data/telemt.toml:/app/data/telemt.toml:rw
-      - ./data/users.db:/app/data/users.db:rw
+      - ./data:/app/data:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       TELEMT_CONTAINER: telemt
