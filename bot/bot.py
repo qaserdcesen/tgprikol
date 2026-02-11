@@ -28,6 +28,7 @@ DOMAIN = os.getenv("DEFAULT_DOMAIN", "1c.ru")
 ADMIN_IDS = list(
     map(int, filter(None, os.getenv("ADMIN_IDS", "").split(",")))
 )  # зарезервировано под админ-команды
+WAITING_OP = {}  # chat_id -> admin action
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
@@ -211,6 +212,132 @@ async def send_reminders(context: ContextTypes.DEFAULT_TYPE):
                 logging.warning(f"Reminder send failed for {chat_id}: {e}")
 
 
+def _is_admin(chat_id: int) -> bool:
+    return chat_id in ADMIN_IDS
+
+
+async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    if not _is_admin(chat_id):
+        await update.message.reply_text("🚫 Нет прав.")
+        return
+
+    keyboard = [
+        [
+            InlineKeyboardButton("📜 Логи", callback_data="admin_logs"),
+            InlineKeyboardButton("➕ Создать секрет", callback_data="admin_create"),
+        ],
+        [InlineKeyboardButton("🗑 Удалить пользователя", callback_data="admin_delete")],
+    ]
+    await update.message.reply_text(
+        "Админ-панель:", reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+
+async def admin_callbacks(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    chat_id = query.message.chat.id
+    if not _is_admin(chat_id):
+        await query.message.reply_text("🚫 Нет прав.")
+        return
+
+    data = query.data
+    if data == "admin_logs":
+        await _send_logs(chat_id, context)
+    elif data == "admin_create":
+        WAITING_OP[chat_id] = "create"
+        await query.message.reply_text(
+            "Отправь сообщением: <telegram_id> <дней>. Пример: 123456789 30\n"
+            "Если дней не указать, возьмётся DEFAULT_DAYS."
+        )
+    elif data == "admin_delete":
+        WAITING_OP[chat_id] = "delete"
+        await query.message.reply_text("Отправь telegram_id пользователя для удаления.")
+
+
+async def _send_logs(chat_id: int, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        result = subprocess.run(
+            ["docker", "logs", "--tail", "50", "telemt-bot"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        text = result.stdout or result.stderr or "Логи пусты."
+    except subprocess.CalledProcessError as e:
+        text = f"Не удалось получить логи: {e.stderr or e}"
+
+    if len(text) > 3800:  # лимит телеги 4096
+        text = "…(обрезано)\n" + text[-3800:]
+    await context.bot.send_message(chat_id, f"<code>{text}</code>", parse_mode="HTML")
+
+
+async def admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    if chat_id not in WAITING_OP:
+        return
+
+    op = WAITING_OP.pop(chat_id)
+
+    if op == "create":
+        parts = update.message.text.strip().split()
+        if not parts:
+            await update.message.reply_text("Формат: <telegram_id> <дней (опц.)>")
+            return
+        try:
+            target_id = int(parts[0])
+            days = int(parts[1]) if len(parts) > 1 else DAYS
+        except ValueError:
+            await update.message.reply_text("Нужны числа: <telegram_id> <дней>")
+            return
+
+        secret = os.urandom(16).hex()
+        username = f"user_{target_id}"
+        try:
+            result = subprocess.run(
+                ["/usr/local/bin/add-secret.sh", secret, username, DOMAIN],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            link = result.stdout.strip()
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Admin add secret failed: {e.stderr}")
+            await update.message.reply_text("❌ Не удалось создать секрет.")
+            return
+
+        expires = (datetime.date.today() + datetime.timedelta(days=days)).isoformat()
+        database.add_user(target_id, secret, expires, link)
+        await update.message.reply_text(
+            f"✅ Создано для {target_id}\nИстекает: {expires}\n🔗 <code>{link}</code>",
+            parse_mode="HTML",
+        )
+
+    elif op == "delete":
+        try:
+            target_id = int(update.message.text.strip())
+        except ValueError:
+            await update.message.reply_text("Нужно число — telegram_id.")
+            return
+
+        username = f"user_{target_id}"
+        try:
+            subprocess.run(
+                ["/usr/local/bin/remove-secret.sh", username],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Admin remove secret failed: {e.stderr}")
+            await update.message.reply_text("❌ Не удалось удалить секрет в конфиге.")
+            return
+
+        database.delete_user(target_id)
+        await update.message.reply_text(f"🗑 Пользователь {target_id} удалён.")
+
+
 def main():
     _require_env()
     database.init_db()
@@ -230,6 +357,9 @@ def main():
             await prolong_payment(update, context)
 
     app.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, payment_handler))
+    app.add_handler(CommandHandler("admin", admin_menu))
+    app.add_handler(CallbackQueryHandler(admin_callbacks, pattern="^admin_"))
+    app.add_handler(MessageHandler(filters.TEXT & filters.Chat(ADMIN_IDS), admin_text))
 
     # Ежедневные напоминания об истечении подписки (UTC 06:00)
     app.job_queue.run_daily(
