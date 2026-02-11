@@ -23,10 +23,10 @@ cd tgprikol
 
 Установка Docker + Compose (Ubuntu/Debian):
 ```bash
-sudo apt update
-sudo apt install -y docker.io docker-compose-plugin
-sudo systemctl enable --now docker
-sudo usermod -aG docker "$USER"   # перелогиньтесь после этой команды
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+exec su -l $USER      # перезайти в сессию
+cd ~/tgprikol         # вернуться в папку
 ```
 
 Подготовка (один раз):
