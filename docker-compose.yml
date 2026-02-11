@@ -1,0 +1,45 @@
+services:
+  telemt:
+    image: whn0thacked/telemt-docker:latest
+    container_name: telemt
+    restart: unless-stopped
+    ports:
+      - "443:443/tcp"
+    volumes:
+      - ./data/telemt.toml:/etc/telemt.toml:ro
+    environment:
+      RUST_LOG: error
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=16m
+
+  bot:
+    build: ./bot
+    container_name: telemt-bot
+    restart: unless-stopped
+    volumes:
+      - ./data/telemt.toml:/app/data/telemt.toml:rw
+      - ./data/users.db:/app/data/users.db:rw
+      - ./docker-compose.yml:/app/docker-compose.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    env_file:
+      - .env
+    depends_on:
+      - telemt
+
+  cleanup:
+    build: ./bot
+    container_name: telemt-cleanup
+    restart: unless-stopped
+    volumes:
+      - ./data/telemt.toml:/app/data/telemt.toml:rw
+      - ./data/users.db:/app/data/users.db:rw
+      - ./docker-compose.yml:/app/docker-compose.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    entrypoint: sh -c "while true; do /usr/local/bin/cleanup.sh; sleep 21600; done"
