@@ -15,6 +15,12 @@
 
 ## Деплой (docker compose)
 
+Клонирование репозитория:
+```bash
+git clone https://github.com/yourorg/tgprikol.git
+cd tgprikol
+```
+
 Подготовка (один раз):
 ```bash
 cp .env.example .env                 # заполните токены и цены
