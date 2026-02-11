@@ -14,7 +14,11 @@ cd tgprikol
 ```bash
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
-exec su -l $USER        # перелогин (или выйти/зайти)  # перелогиньтесь после этой команды
+exec su -l $USER        # перелогин (или выйти/зайти)  # перелогиньтесь после этой команды     # перезайти в сессию        # вернуться в папку
+```
+
+```bash
+cd ~/tgprikol
 ```
 
 Подготовка (один раз):
