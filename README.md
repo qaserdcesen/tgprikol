@@ -14,7 +14,7 @@ cd tgprikol
 ```bash
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
-exec su -l $USER        # перелогин (или выйти/зайти)  # перелогиньтесь после этой команды     # перезайти в сессию        # вернуться в папку
+exec su -l $USER
 ```
 
 ```bash
@@ -24,11 +24,11 @@ cd ~/tgprikol
 Подготовка (один раз):
 ```bash
 mkdir -p data
-cp env.example .env                 # заполните токены и цены
-nano .env                            # обязательно: BOT_TOKEN, PROVIDER_TOKEN, ADMIN_IDS
+cp env.example .env
+nano .env
 ADMIN_SECRET=$(openssl rand -hex 16)
 sed "s/{{ADMIN_SECRET}}/$ADMIN_SECRET/" telemt/telemt.toml > data/telemt.toml
-touch data/users.db                  # пустой файл, чтобы корректно примонтировать
+touch data/users.db
 ```
 
 Сборка и запуск:
