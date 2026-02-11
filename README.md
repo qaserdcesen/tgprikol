@@ -17,7 +17,7 @@
 
 Клонирование репозитория:
 ```bash
-git clone https://github.com/yourorg/tgprikol.git
+git clone https://github.com/qaserdcesen/tgprikol.git
 cd tgprikol
 ```
 
