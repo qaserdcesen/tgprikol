@@ -19,3 +19,8 @@ def update_expires(tid, new_expires):
 def get_users_by_date(date_iso):
     with sqlite3.connect(DB_PATH) as c:
         return c.execute('SELECT * FROM users WHERE expires_at = ?', (date_iso,)).fetchall()
+
+# Все пользователи с секретами
+def get_all_users():
+    with sqlite3.connect(DB_PATH) as c:
+        return c.execute('SELECT telegram_id, secret, expires_at, link FROM users').fetchall()

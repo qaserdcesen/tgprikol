@@ -65,6 +65,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if query.data == "buy":
         await buy(update, context)
+    elif query.data.startswith("buy_"):
+        await buy_specific(update, context)
     elif query.data == "status":
         await status(update, context)
     elif query.data == "prolong":
@@ -74,15 +76,39 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def buy(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     chat_id = query.message.chat.id
+    options = [
+        InlineKeyboardButton("💳 30 дней", callback_data="buy_30"),
+        InlineKeyboardButton("💳 60 дней", callback_data="buy_60"),
+        InlineKeyboardButton("💳 90 дней", callback_data="buy_90"),
+    ]
+    await query.message.reply_text(
+        "Выберите срок подписки:",
+        reply_markup=InlineKeyboardMarkup([options]),
+    )
+
+
+def _price_for(days: int) -> int:
+    # Линейная цена от базового тарифа (PRICE за DAYS)
+    return int(round(PRICE * days / DAYS))
+
+
+async def buy_specific(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    chat_id = query.message.chat.id
+    try:
+        days = int(query.data.split("_")[1])
+    except Exception:
+        await query.message.reply_text("Не понял срок подписки.")
+        return
 
     await context.bot.send_invoice(
         chat_id,
-        title=f"MTProxy {DAYS} дней",
+        title=f"MTProxy {days} дней",
         description=f"Приватный прокси с Fake TLS. Домен: {DOMAIN}",
-        payload=f"sub_{chat_id}_{DAYS}",
+        payload=f"sub_{chat_id}_{days}",
         provider_token=PROVIDER_TOKEN,
         currency="RUB",
-        prices=[LabeledPrice(f"Подписка {DAYS} дней", PRICE * 100)],
+        prices=[LabeledPrice(f"Подписка {days} дней", _price_for(days) * 100)],
     )
 
 
@@ -228,6 +254,7 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
             InlineKeyboardButton("➕ Создать секрет", callback_data="admin_create"),
         ],
         [InlineKeyboardButton("🗑 Удалить пользователя", callback_data="admin_delete")],
+        [InlineKeyboardButton("👥 Все пользователи", callback_data="admin_list")],
     ]
     await update.message.reply_text(
         "Админ-панель:", reply_markup=InlineKeyboardMarkup(keyboard)
@@ -254,6 +281,8 @@ async def admin_callbacks(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "admin_delete":
         WAITING_OP[chat_id] = "delete"
         await query.message.reply_text("Отправь telegram_id пользователя для удаления.")
+    elif data == "admin_list":
+        await _send_user_list(chat_id, context)
 
 
 async def _send_logs(chat_id: int, context: ContextTypes.DEFAULT_TYPE):
@@ -338,6 +367,22 @@ async def admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"🗑 Пользователь {target_id} удалён.")
 
 
+async def _send_user_list(chat_id: int, context: ContextTypes.DEFAULT_TYPE):
+    users = database.get_all_users()
+    if not users:
+        await context.bot.send_message(chat_id, "Пользователей нет.")
+        return
+
+    lines = []
+    for tid, secret, expires, _link in users:
+        lines.append(f"{tid} | истекает {expires} | {secret}")
+
+    text = "\n".join(lines)
+    if len(text) > 3800:
+        text = "…(обрезано)\n" + text[-3800:]
+    await context.bot.send_message(chat_id, f"<code>{text}</code>", parse_mode="HTML")
+
+
 def main():
     _require_env()
     database.init_db()
@@ -345,7 +390,7 @@ def main():
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(button, pattern="^(buy|status|prolong)$"))
+    app.add_handler(CallbackQueryHandler(button, pattern="^(buy(_\\d+)?|status|prolong)$"))
     app.add_handler(PreCheckoutQueryHandler(precheckout))
 
     # Обработчик платежей (и покупка, и продление)
