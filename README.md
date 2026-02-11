@@ -78,3 +78,12 @@ echo "tg://proxy?server=$IP&port=443&secret=ee${ADMIN_SECRET}${HEX_LEN}${HEX_DOM
 ## Безопасность
 - Не коммитьте токены и файл `data/telemt.toml` с секретами.
 - У бота есть доступ к docker.sock — оставляйте его только если нужно управлять контейнером, иначе уберите монтирование.
+
+
+```
+git pull
+```
+```
+docker compose build bot cleanup
+docker compose up -d
+```
