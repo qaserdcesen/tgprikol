@@ -191,6 +191,26 @@ async def prolong_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def send_reminders(context: ContextTypes.DEFAULT_TYPE):
+    today = datetime.date.today()
+    targets = [
+        (today, "⏳ Сегодня истекает ваша подписка. Чтобы не потерять доступ, продлите её через кнопку «Продлить»."),
+        (
+            today + datetime.timedelta(days=1),
+            "🕐 Завтра истекает ваша подписка. Нажмите «Продлить», чтобы сохранить доступ.",
+        ),
+    ]
+
+    for target_date, message in targets:
+        users = database.get_users_by_date(target_date.isoformat())
+        for user in users:
+            chat_id = user[0]
+            try:
+                await context.bot.send_message(chat_id, message)
+            except Exception as e:
+                logging.warning(f"Reminder send failed for {chat_id}: {e}")
+
+
 def main():
     _require_env()
     database.init_db()
@@ -210,6 +230,13 @@ def main():
             await prolong_payment(update, context)
 
     app.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, payment_handler))
+
+    # Ежедневные напоминания об истечении подписки (UTC 06:00)
+    app.job_queue.run_daily(
+        send_reminders,
+        time=datetime.time(hour=6, minute=0, tzinfo=datetime.timezone.utc),
+        name="reminders",
+    )
 
     app.run_polling()
 

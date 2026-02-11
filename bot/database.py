@@ -13,3 +13,9 @@ def delete_user(tid):
     with sqlite3.connect(DB_PATH) as c: c.execute('DELETE FROM users WHERE telegram_id = ?', (tid,))
 def update_expires(tid, new_expires):
     with sqlite3.connect(DB_PATH) as c: c.execute('UPDATE users SET expires_at = ? WHERE telegram_id = ?', (new_expires, tid))
+
+
+# Возвращает список пользователей, срок которых истекает в указанную дату (YYYY-MM-DD)
+def get_users_by_date(date_iso):
+    with sqlite3.connect(DB_PATH) as c:
+        return c.execute('SELECT * FROM users WHERE expires_at = ?', (date_iso,)).fetchall()
