@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import os
 import logging
 import subprocess
@@ -27,7 +29,7 @@ DAYS = int(os.getenv("DEFAULT_DAYS", 30))
 DOMAIN = os.getenv("DEFAULT_DOMAIN", "1c.ru")
 ADMIN_IDS = list(
     map(int, filter(None, os.getenv("ADMIN_IDS", "").split(",")))
-)  # зарезервировано под админ-команды
+)  # Р·Р°СЂРµР·РµСЂРІРёСЂРѕРІР°РЅРѕ РїРѕРґ Р°РґРјРёРЅ-РєРѕРјР°РЅРґС‹
 WAITING_OP = {}  # chat_id -> admin action
 
 logging.basicConfig(
@@ -39,21 +41,21 @@ def _require_env():
     missing = [name for name in ("BOT_TOKEN", "PROVIDER_TOKEN") if not os.getenv(name)]
     if missing:
         raise SystemExit(
-            f"Отсутствуют обязательные переменные окружения: {', '.join(missing)}"
+            f"РћС‚СЃСѓС‚СЃС‚РІСѓСЋС‚ РѕР±СЏР·Р°С‚РµР»СЊРЅС‹Рµ РїРµСЂРµРјРµРЅРЅС‹Рµ РѕРєСЂСѓР¶РµРЅРёСЏ: {', '.join(missing)}"
         )
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
-        [InlineKeyboardButton("🛒 Купить подписку", callback_data="buy")],
-        [InlineKeyboardButton("📋 Мой статус", callback_data="status")],
-        [InlineKeyboardButton("🔄 Продлить", callback_data="prolong")],
+        [InlineKeyboardButton("рџ›’ РљСѓРїРёС‚СЊ РїРѕРґРїРёСЃРєСѓ", callback_data="buy")],
+        [InlineKeyboardButton("рџ“‹ РњРѕР№ СЃС‚Р°С‚СѓСЃ", callback_data="status")],
+        [InlineKeyboardButton("рџ”„ РџСЂРѕРґР»РёС‚СЊ", callback_data="prolong")],
     ]
     await update.message.reply_text(
         (
-            "👋 Привет! Это бот для покупки MTProto прокси.\n"
-            f"💰 {PRICE}₽ / {DAYS} дней\n"
-            f"🔒 Fake TLS маскировка под {DOMAIN}"
+            "рџ‘‹ РџСЂРёРІРµС‚! Р­С‚Рѕ Р±РѕС‚ РґР»СЏ РїРѕРєСѓРїРєРё MTProto РїСЂРѕРєСЃРё.\n"
+            f"рџ’° {PRICE}в‚Ѕ / {DAYS} РґРЅРµР№\n"
+            f"рџ”’ Fake TLS РјР°СЃРєРёСЂРѕРІРєР° РїРѕРґ {DOMAIN}"
         ),
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
@@ -77,18 +79,18 @@ async def buy(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     chat_id = query.message.chat.id
     options = [
-        InlineKeyboardButton("💳 30 дней", callback_data="buy_30"),
-        InlineKeyboardButton("💳 60 дней", callback_data="buy_60"),
-        InlineKeyboardButton("💳 90 дней", callback_data="buy_90"),
+        InlineKeyboardButton("рџ’і 30 РґРЅРµР№", callback_data="buy_30"),
+        InlineKeyboardButton("рџ’і 60 РґРЅРµР№", callback_data="buy_60"),
+        InlineKeyboardButton("рџ’і 90 РґРЅРµР№", callback_data="buy_90"),
     ]
     await query.message.reply_text(
-        "Выберите срок подписки:",
+        "Р’С‹Р±РµСЂРёС‚Рµ СЃСЂРѕРє РїРѕРґРїРёСЃРєРё:",
         reply_markup=InlineKeyboardMarkup([options]),
     )
 
 
 def _price_for(days: int) -> int:
-    # Линейная цена от базового тарифа (PRICE за DAYS)
+    # Р›РёРЅРµР№РЅР°СЏ С†РµРЅР° РѕС‚ Р±Р°Р·РѕРІРѕРіРѕ С‚Р°СЂРёС„Р° (PRICE Р·Р° DAYS)
     return int(round(PRICE * days / DAYS))
 
 
@@ -98,17 +100,17 @@ async def buy_specific(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         days = int(query.data.split("_")[1])
     except Exception:
-        await query.message.reply_text("Не понял срок подписки.")
+        await query.message.reply_text("РќРµ РїРѕРЅСЏР» СЃСЂРѕРє РїРѕРґРїРёСЃРєРё.")
         return
 
     await context.bot.send_invoice(
         chat_id,
-        title=f"MTProxy {days} дней",
-        description=f"Приватный прокси с Fake TLS. Домен: {DOMAIN}",
+        title=f"MTProxy {days} РґРЅРµР№",
+        description=f"РџСЂРёРІР°С‚РЅС‹Р№ РїСЂРѕРєСЃРё СЃ Fake TLS. Р”РѕРјРµРЅ: {DOMAIN}",
         payload=f"sub_{chat_id}_{days}",
         provider_token=PROVIDER_TOKEN,
         currency="RUB",
-        prices=[LabeledPrice(f"Подписка {days} дней", _price_for(days) * 100)],
+        prices=[LabeledPrice(f"РџРѕРґРїРёСЃРєР° {days} РґРЅРµР№", _price_for(days) * 100)],
     )
 
 
@@ -136,7 +138,7 @@ async def successful_payment(update: Update, context: ContextTypes.DEFAULT_TYPE)
     except subprocess.CalledProcessError as e:
         logging.error(f"Add secret failed: {e.stderr}")
         await update.message.reply_text(
-            "❌ Ошибка создания прокси. Администратор уведомлен."
+            "вќЊ РћС€РёР±РєР° СЃРѕР·РґР°РЅРёСЏ РїСЂРѕРєСЃРё. РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ СѓРІРµРґРѕРјР»РµРЅ."
         )
         return
 
@@ -144,13 +146,13 @@ async def successful_payment(update: Update, context: ContextTypes.DEFAULT_TYPE)
     database.add_user(chat_id, secret, expires, link)
 
     keyboard = [
-        [InlineKeyboardButton("������", callback_data="status")],
-        [InlineKeyboardButton("������� ������", url=link)],
+        [InlineKeyboardButton("Статус", callback_data="status")],
+        [InlineKeyboardButton("Открыть прокси", url=link)],
     ]
     await update.message.reply_text(
         (
-            "✔ Оплата прошла!\n"
-            f"⌛ Действует до: {expires}"
+            "вњ” РћРїР»Р°С‚Р° РїСЂРѕС€Р»Р°!\n"
+            f"вЊ› Р”РµР№СЃС‚РІСѓРµС‚ РґРѕ: {expires}"
         ),
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
@@ -165,14 +167,14 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user:
         _, _, expires, link, _ = user
         days_left = (datetime.date.fromisoformat(expires) - datetime.date.today()).days
-        keyboard = [[InlineKeyboardButton("������� ������", url=link)]]
+        keyboard = [[InlineKeyboardButton("Открыть прокси", url=link)]]
         await query.message.reply_text(
-            f"? ��������: {expires} (�������� {days_left} ��.)",
+            f"? Истекает: {expires} (осталось {days_left} дн.)",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
     else:
-        await query.message.reply_text("❌ У вас нет активной подписки.")
+        await query.message.reply_text("вќЊ РЈ РІР°СЃ РЅРµС‚ Р°РєС‚РёРІРЅРѕР№ РїРѕРґРїРёСЃРєРё.")
 
 
 async def prolong(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -180,17 +182,17 @@ async def prolong(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = query.message.chat.id
 
     if not database.get_user(chat_id):
-        await query.message.reply_text("❌ Сначала купите подписку через 🛒")
+        await query.message.reply_text("вќЊ РЎРЅР°С‡Р°Р»Р° РєСѓРїРёС‚Рµ РїРѕРґРїРёСЃРєСѓ С‡РµСЂРµР· рџ›’")
         return
 
     await context.bot.send_invoice(
         chat_id,
-        title=f"Продление {DAYS} дней",
-        description="Продление подписки. Ссылка останется той же.",
+        title=f"РџСЂРѕРґР»РµРЅРёРµ {DAYS} РґРЅРµР№",
+        description="РџСЂРѕРґР»РµРЅРёРµ РїРѕРґРїРёСЃРєРё. РЎСЃС‹Р»РєР° РѕСЃС‚Р°РЅРµС‚СЃСЏ С‚РѕР№ Р¶Рµ.",
         payload=f"prolong_{chat_id}_{DAYS}",
         provider_token=PROVIDER_TOKEN,
         currency="RUB",
-        prices=[LabeledPrice(f"Продление {DAYS} дней", PRICE * 100)],
+        prices=[LabeledPrice(f"РџСЂРѕРґР»РµРЅРёРµ {DAYS} РґРЅРµР№", PRICE * 100)],
     )
 
 
@@ -202,7 +204,7 @@ async def prolong_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user = database.get_user(chat_id)
     if not user:
-        await update.message.reply_text("❌ Пользователь не найден")
+        await update.message.reply_text("вќЊ РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅРµ РЅР°Р№РґРµРЅ")
         return
 
     new_expires = (
@@ -210,9 +212,9 @@ async def prolong_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ).isoformat()
     database.update_expires(chat_id, new_expires)
 
-    keyboard = [[InlineKeyboardButton("������� ������", url=user[3])]]
+    keyboard = [[InlineKeyboardButton("Открыть прокси", url=user[3])]]
     await update.message.reply_text(
-        f"✔ Подписка продлена до {new_expires}",
+        f"вњ” РџРѕРґРїРёСЃРєР° РїСЂРѕРґР»РµРЅР° РґРѕ {new_expires}",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
@@ -221,10 +223,10 @@ async def prolong_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def send_reminders(context: ContextTypes.DEFAULT_TYPE):
     today = datetime.date.today()
     targets = [
-        (today, "⏳ Сегодня истекает ваша подписка. Чтобы не потерять доступ, продлите её через кнопку «Продлить»."),
+        (today, "вЏі РЎРµРіРѕРґРЅСЏ РёСЃС‚РµРєР°РµС‚ РІР°С€Р° РїРѕРґРїРёСЃРєР°. Р§С‚РѕР±С‹ РЅРµ РїРѕС‚РµСЂСЏС‚СЊ РґРѕСЃС‚СѓРї, РїСЂРѕРґР»РёС‚Рµ РµС‘ С‡РµСЂРµР· РєРЅРѕРїРєСѓ В«РџСЂРѕРґР»РёС‚СЊВ»."),
         (
             today + datetime.timedelta(days=1),
-            "🕐 Завтра истекает ваша подписка. Нажмите «Продлить», чтобы сохранить доступ.",
+            "рџ•ђ Р—Р°РІС‚СЂР° РёСЃС‚РµРєР°РµС‚ РІР°С€Р° РїРѕРґРїРёСЃРєР°. РќР°Р¶РјРёС‚Рµ В«РџСЂРѕРґР»РёС‚СЊВ», С‡С‚РѕР±С‹ СЃРѕС…СЂР°РЅРёС‚СЊ РґРѕСЃС‚СѓРї.",
         ),
     ]
 
@@ -245,19 +247,19 @@ def _is_admin(chat_id: int) -> bool:
 async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     if not _is_admin(chat_id):
-        await update.message.reply_text("🚫 Нет прав.")
+        await update.message.reply_text("рџљ« РќРµС‚ РїСЂР°РІ.")
         return
 
     keyboard = [
         [
-            InlineKeyboardButton("📜 Логи", callback_data="admin_logs"),
-            InlineKeyboardButton("➕ Создать секрет", callback_data="admin_create"),
+            InlineKeyboardButton("рџ“њ Р›РѕРіРё", callback_data="admin_logs"),
+            InlineKeyboardButton("вћ• РЎРѕР·РґР°С‚СЊ СЃРµРєСЂРµС‚", callback_data="admin_create"),
         ],
-        [InlineKeyboardButton("🗑 Удалить пользователя", callback_data="admin_delete")],
-        [InlineKeyboardButton("👥 Все пользователи", callback_data="admin_list")],
+        [InlineKeyboardButton("рџ—‘ РЈРґР°Р»РёС‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ", callback_data="admin_delete")],
+        [InlineKeyboardButton("рџ‘Ґ Р’СЃРµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё", callback_data="admin_list")],
     ]
     await update.message.reply_text(
-        "Админ-панель:", reply_markup=InlineKeyboardMarkup(keyboard)
+        "РђРґРјРёРЅ-РїР°РЅРµР»СЊ:", reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
 
@@ -266,7 +268,7 @@ async def admin_callbacks(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     chat_id = query.message.chat.id
     if not _is_admin(chat_id):
-        await query.message.reply_text("🚫 Нет прав.")
+        await query.message.reply_text("рџљ« РќРµС‚ РїСЂР°РІ.")
         return
 
     data = query.data
@@ -275,12 +277,12 @@ async def admin_callbacks(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "admin_create":
         WAITING_OP[chat_id] = "create"
         await query.message.reply_text(
-            "Отправь сообщением: <telegram_id> <дней>. Пример: 123456789 30\n"
-            "Если дней не указать, возьмётся DEFAULT_DAYS."
+            "РћС‚РїСЂР°РІСЊ СЃРѕРѕР±С‰РµРЅРёРµРј: <telegram_id> <РґРЅРµР№>. РџСЂРёРјРµСЂ: 123456789 30\n"
+            "Р•СЃР»Рё РґРЅРµР№ РЅРµ СѓРєР°Р·Р°С‚СЊ, РІРѕР·СЊРјС‘С‚СЃСЏ DEFAULT_DAYS."
         )
     elif data == "admin_delete":
         WAITING_OP[chat_id] = "delete"
-        await query.message.reply_text("Отправь telegram_id пользователя для удаления.")
+        await query.message.reply_text("РћС‚РїСЂР°РІСЊ telegram_id РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РґР»СЏ СѓРґР°Р»РµРЅРёСЏ.")
     elif data == "admin_list":
         await _send_user_list(chat_id, context)
 
@@ -293,12 +295,12 @@ async def _send_logs(chat_id: int, context: ContextTypes.DEFAULT_TYPE):
             text=True,
             check=True,
         )
-        text = result.stdout or result.stderr or "Логи пусты."
+        text = result.stdout or result.stderr or "Р›РѕРіРё РїСѓСЃС‚С‹."
     except subprocess.CalledProcessError as e:
-        text = f"Не удалось получить логи: {e.stderr or e}"
+        text = f"РќРµ СѓРґР°Р»РѕСЃСЊ РїРѕР»СѓС‡РёС‚СЊ Р»РѕРіРё: {e.stderr or e}"
 
-    if len(text) > 3800:  # лимит телеги 4096
-        text = "…(обрезано)\n" + text[-3800:]
+    if len(text) > 3800:  # Р»РёРјРёС‚ С‚РµР»РµРіРё 4096
+        text = "вЂ¦(РѕР±СЂРµР·Р°РЅРѕ)\n" + text[-3800:]
     await context.bot.send_message(chat_id, f"<code>{text}</code>", parse_mode="HTML")
 
 
@@ -312,13 +314,13 @@ async def admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if op == "create":
         parts = update.message.text.strip().split()
         if not parts:
-            await update.message.reply_text("Формат: <telegram_id> <дней (опц.)>")
+            await update.message.reply_text("Р¤РѕСЂРјР°С‚: <telegram_id> <РґРЅРµР№ (РѕРїС†.)>")
             return
         try:
             target_id = int(parts[0])
             days = int(parts[1]) if len(parts) > 1 else DAYS
         except ValueError:
-            await update.message.reply_text("Нужны числа: <telegram_id> <дней>")
+            await update.message.reply_text("РќСѓР¶РЅС‹ С‡РёСЃР»Р°: <telegram_id> <РґРЅРµР№>")
             return
 
         secret = os.urandom(16).hex()
@@ -333,14 +335,14 @@ async def admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             link = result.stdout.strip()
         except subprocess.CalledProcessError as e:
             logging.error(f"Admin add secret failed: {e.stderr}")
-            await update.message.reply_text("❌ Не удалось создать секрет.")
+            await update.message.reply_text("вќЊ РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕР·РґР°С‚СЊ СЃРµРєСЂРµС‚.")
             return
 
         expires = (datetime.date.today() + datetime.timedelta(days=days)).isoformat()
         database.add_user(target_id, secret, expires, link)
-        keyboard = [[InlineKeyboardButton("������� ������", url=link)]]
+        keyboard = [[InlineKeyboardButton("Открыть прокси", url=link)]]
         await update.message.reply_text(
-            f"✅ Создано для {target_id}\nИстекает: {expires}",
+            f"вњ… РЎРѕР·РґР°РЅРѕ РґР»СЏ {target_id}\nРСЃС‚РµРєР°РµС‚: {expires}",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
@@ -349,7 +351,7 @@ async def admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             target_id = int(update.message.text.strip())
         except ValueError:
-            await update.message.reply_text("Нужно число — telegram_id.")
+            await update.message.reply_text("РќСѓР¶РЅРѕ С‡РёСЃР»Рѕ вЂ” telegram_id.")
             return
 
         username = f"user_{target_id}"
@@ -362,26 +364,26 @@ async def admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except subprocess.CalledProcessError as e:
             logging.error(f"Admin remove secret failed: {e.stderr}")
-            await update.message.reply_text("❌ Не удалось удалить секрет в конфиге.")
+            await update.message.reply_text("вќЊ РќРµ СѓРґР°Р»РѕСЃСЊ СѓРґР°Р»РёС‚СЊ СЃРµРєСЂРµС‚ РІ РєРѕРЅС„РёРіРµ.")
             return
 
         database.delete_user(target_id)
-        await update.message.reply_text(f"🗑 Пользователь {target_id} удалён.")
+        await update.message.reply_text(f"рџ—‘ РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ {target_id} СѓРґР°Р»С‘РЅ.")
 
 
 async def _send_user_list(chat_id: int, context: ContextTypes.DEFAULT_TYPE):
     users = database.get_all_users()
     if not users:
-        await context.bot.send_message(chat_id, "Пользователей нет.")
+        await context.bot.send_message(chat_id, "РџРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РЅРµС‚.")
         return
 
     lines = []
     for tid, secret, expires, _link in users:
-        lines.append(f"{tid} | истекает {expires} | {secret}")
+        lines.append(f"{tid} | РёСЃС‚РµРєР°РµС‚ {expires} | {secret}")
 
     text = "\n".join(lines)
     if len(text) > 3800:
-        text = "…(обрезано)\n" + text[-3800:]
+        text = "вЂ¦(РѕР±СЂРµР·Р°РЅРѕ)\n" + text[-3800:]
     await context.bot.send_message(chat_id, f"<code>{text}</code>", parse_mode="HTML")
 
 
@@ -395,7 +397,7 @@ def main():
     app.add_handler(CallbackQueryHandler(button, pattern="^(buy(_\\d+)?|status|prolong)$"))
     app.add_handler(PreCheckoutQueryHandler(precheckout))
 
-    # Обработчик платежей (и покупка, и продление)
+    # РћР±СЂР°Р±РѕС‚С‡РёРє РїР»Р°С‚РµР¶РµР№ (Рё РїРѕРєСѓРїРєР°, Рё РїСЂРѕРґР»РµРЅРёРµ)
     async def payment_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         payload = update.message.successful_payment.invoice_payload
         if payload.startswith("sub_"):
@@ -408,7 +410,7 @@ def main():
     app.add_handler(CallbackQueryHandler(admin_callbacks, pattern="^admin_"))
     app.add_handler(MessageHandler(filters.TEXT & filters.Chat(ADMIN_IDS), admin_text))
 
-    # Ежедневные напоминания об истечении подписки (UTC 06:00)
+    # Р•Р¶РµРґРЅРµРІРЅС‹Рµ РЅР°РїРѕРјРёРЅР°РЅРёСЏ РѕР± РёСЃС‚РµС‡РµРЅРёРё РїРѕРґРїРёСЃРєРё (UTC 06:00)
     app.job_queue.run_daily(
         send_reminders,
         time=datetime.time(hour=6, minute=0, tzinfo=datetime.timezone.utc),

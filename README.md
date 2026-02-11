@@ -91,3 +91,7 @@ docker compose up -d
 docker compose ps
 docker compose logs -f bot
 ```
+
+```
+docker logs telemt
+```
